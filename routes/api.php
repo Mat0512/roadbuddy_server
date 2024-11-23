@@ -8,6 +8,7 @@ use App\Http\Controllers\ProviderServiceController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\SPRatingController;
+use App\Http\Controllers\ChatController;
 
 
 /*
@@ -26,7 +27,7 @@ Route::prefix('/auth')->group(function () {
     Route::post('login', [UserController::class, 'login']);
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('user', [UserController::class, 'getUser']);
-        Route::put('user/update', [UserController::class, 'updateUser']);
+        Route::put('user/update', action: [UserController::class, 'updateUser']);
         Route::put("user/update-password", [UserController::class, 'updatePassword']);
     });
 });
@@ -75,6 +76,17 @@ Route::prefix('/rating')->group(function () {
 
     // Route to update an existing rating
     Route::patch('/{rating_id}', [SPRatingController::class, 'update']);
+});
+
+Route::prefix('/chat')->group(function() {
+ // Route to send a message
+ Route::middleware('auth:sanctum')->post('/send', [ChatController::class, 'sendMessage'])->name(name: 'chat.send');
+                                                                                                                                                                          
+ // Route to list all chat rooms for the authenticated user
+ Route::middleware('auth:sanctum')->get('/rooms', [ChatController::class, 'listChatRooms'])->name('chat.rooms');
+
+ // Route to get messages with a specific user
+ Route::middleware('auth:sanctum')->get('/messages/{userId}', [ChatController::class, 'getMessages'])->name('chat.messages');
 });
 
 

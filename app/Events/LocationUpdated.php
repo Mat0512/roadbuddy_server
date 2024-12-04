@@ -7,6 +7,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Support\Facades\Log;
 
 class LocationUpdated implements ShouldBroadcastNow
 {
@@ -16,16 +17,21 @@ class LocationUpdated implements ShouldBroadcastNow
     public $longitude;
     public $userId;
 
-    public function __construct($latitude, $longitude, $userId)
+    public function __construct($latitude, $longitude, $requestId)
     {
         $this->latitude = $latitude;
         $this->longitude = $longitude;
-        $this->userId = $userId;
+        $this->requestId = $requestId;
     }
 
     public function broadcastOn()
     {
-        return new Channel('location.' . $this->userId);
+        Log::info('LocationUpdated Event broadcast on', [
+            'latitude' => $this->latitude,
+            'requestId' => $this->requestId,
+            'longitude' => $this->longitude,
+        ]);
+        return new Channel('location.' . $this->requestId);
     }
 
     public function broadcastAs()
@@ -33,11 +39,11 @@ class LocationUpdated implements ShouldBroadcastNow
         return 'location.updated';
     }
 
-    public function broadcastWith()
-    {
+    public function broadcastWith() 
+    {   
         return [
-            'latitude' => $this->latitude,
-            'longitude' => $this->longitude,
+            'lat' => $this->latitude,
+            'long' => $this->longitude,
         ];
     }
 }

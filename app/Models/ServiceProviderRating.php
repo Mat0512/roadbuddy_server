@@ -45,6 +45,8 @@ class ServiceProviderRating extends Model
     protected $fillable = [
         'driver_id',
         'service_provider_id',
+        'request_id',
+        'comment',
         'rating',
     ];
 
@@ -58,11 +60,16 @@ class ServiceProviderRating extends Model
 
     public function driver()
     {
-        return $this->belongsTo(Driver::class, 'driver_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function serviceProvider()
     {
         return $this->belongsTo(ServiceProvider::class, 'service_provider_id');
     }
-}
+
+    public function serviceRequest()
+    {
+        return $this->belongsTo(ServiceProviderRating::class, 'request_id');
+    }
+}   

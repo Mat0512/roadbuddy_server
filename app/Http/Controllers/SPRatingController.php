@@ -18,9 +18,11 @@ class SPRatingController extends Controller
     {
         // Validate the request data
         $validator = Validator::make($request->all(), [
-            'driver_id' => 'required|exists:drivers,driver_id',
+            'driver_id' => 'required|exists:users,user_id',
             'service_provider_id' => 'required|exists:service_providers,provider_id',
+            'request_id' => 'required|exists:requests,request_id',
             'rating' => 'required|numeric|min:1|max:5', // Assuming ratings are between 1 and 5
+            'comment' => 'required'
         ]);
         
         // Check if validation fails
@@ -37,7 +39,8 @@ class SPRatingController extends Controller
 
         return response()->json([
             'message' => 'Rating created successfully.',
-            'data' => $rating,
+            // 'data' => $rating,
+            'data'=> $rating    ,
         ], 200);
     }
 

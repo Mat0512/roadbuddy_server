@@ -9,6 +9,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\SPRatingController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\PaymentController;
 
 
 /*
@@ -35,6 +36,8 @@ Route::prefix('/auth')->group(function () {
 
 Route::prefix('/provider-services')->group(function () {
     // Store new provider service
+    Route::get('', [ProviderServiceController::class, 'index']);
+
     Route::post('', [ProviderServiceController::class, 'store']);
     // Update provider service
     Route::put('{provider_service_id}', [ProviderServiceController::class, 'update']);
@@ -43,18 +46,25 @@ Route::prefix('/provider-services')->group(function () {
 });
 
 Route::prefix('/service-providers')->group(function () {
+
+    Route::get('/locations', [ServiceProviderController::class, 'getLocations']);
     // List all service providers
     Route::get('', [ServiceProviderController::class, 'index']);
     // Get a specific service provider by ID
     Route::get('{provider_id}', [ServiceProviderController::class, 'show']);
     // Update a service provider
     Route::put('{provider_id}', [ServiceProviderController::class, 'update']);
+
 });
 
 
 Route::prefix('/service-requests')->group(function () {
     // Get service request list
+    Route::get('/counts/{providerId}', [ServiceRequestController::class, 'getRequestCounts']);
+
     Route::get('/', [ServiceRequestController::class, 'getList']);
+
+    Route::post('/location', [ServiceRequestController::class, 'updateLocation']);
 
     // Get service request by id
     Route::get('/{request_id}', [ServiceRequestController::class, 'getById']);
@@ -67,6 +77,8 @@ Route::prefix('/service-requests')->group(function () {
 
     // Rate a service request by ID
     Route::patch('/{request_id}/rate', [ServiceRequestController::class, 'rate']);
+    
+
 });
 
 
@@ -86,7 +98,6 @@ Route::prefix('/chat')->group(function() {
  Route::middleware('auth:sanctum')->get('/rooms', [ChatController::class, 'listChatRooms'])->name('chat.rooms');
 
  // Route to get messages with a specific user
- Route::middleware('auth:sanctum')->get('/messages/{userId}', [ChatController::class, 'getMessages'])->name('chat.messages');
+ Route::middleware('auth:sanctum')->get('/messages/{id}', [ChatController::class, 'getMessages'])->name('chat.messages');
 });
-
 

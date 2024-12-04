@@ -28,7 +28,7 @@ class ServiceRequestCancelledForUser implements ShouldBroadcast
 
     public function broadcastAs()
     {
-        return 'service.request.cancelled';
+        return 'service.request.cancelled.user';
     }
 
     public function broadcastWith()

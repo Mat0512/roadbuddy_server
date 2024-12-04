@@ -36,7 +36,7 @@ class Driver extends Model
      * @var string
      */
     protected $keyType = 'int';
-
+    
     /**
      * The attributes that are mass assignable.
      *

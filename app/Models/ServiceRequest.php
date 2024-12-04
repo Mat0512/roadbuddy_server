@@ -26,7 +26,6 @@ class ServiceRequest extends Model
         'location_lat',
         'location_lng',
         'service_id',
-        'rating'
     ];
 
     public $timestamps = false;
@@ -45,5 +44,10 @@ class ServiceRequest extends Model
     public function service()
     {
         return $this->belongsTo(ProviderService::class, 'service_id');
+    }
+        
+    public function rating()
+    {
+        return $this->hasOne(ServiceProviderRating::class, 'request_id', 'request_id');
     }
 }

@@ -4,66 +4,84 @@ namespace App\Http\Controllers;
 
 use App\Models\ServiceRequest;
 use App\Events\ServiceRequestCreated;
+use App\Events\ServiceRequestAccepted;
+use App\Events\ServiceRequestCancelled; 
+use App\Events\ServiceRequestCancelledForUser;
+use App\Events\LocationUpdated;
 use Illuminate\Http\Request;
 
 class ServiceRequestController extends Controller
 {
-    /**
-     * Create a new service request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
 
+    public function getRequestCounts($providerId)
+    {
+        $counts = ServiceRequest::where('provider_id', $providerId)
+            ->selectRaw("
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
+                COUNT(CASE WHEN status = 'accepted' THEN 1 END) as in_progress_count,
+                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count
+            ")
+            ->first();
 
-     public function getList(Request $request)
-     {
-         // Retrieve query parameters
-         $providerId = $request->query('provider_id');
-         $userId = $request->query('user_id');
-         $status = $request->query('status');
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'pending' => $counts->pending_count,
+                'in_progress' => $counts->in_progress_count,
+                'completed' => $counts->completed_count,
+            ],
+        ], 200);
+    }
 
-         // Build the query with optional filtering
-         $query = ServiceRequest::with('service'); // Eager load related service data
-
-         // Filter by provider_id if provided
-         if ($providerId) {
-             $query->where('provider_id', $providerId);
-         }
-
-         if ($userId) {
+    public function getList(Request $request)
+    {
+        // Retrieve query parameters
+        $providerId = $request->query('provider_id');
+        $userId = $request->query('user_id');
+        $status = $request->query('status');
+    
+        // Build the query with optional filtering
+        $query = ServiceRequest::with(['service', 'rating']); // Eager load related service and rating data
+    
+        // Filter by provider_id if provided
+        if ($providerId) {
+            $query->where('provider_id', $providerId);
+        }
+    
+        if ($userId) {
             $query->where('user_id', $userId);
         }
-
-         // Filter by status if provided
-         if ($status) {
-             $query->where('status', $status);
-         }
-
-         // Get the filtered list of service requests
-         $serviceRequests = $query->get();
-
-         // Map results to include the service_name directly
-         $serviceRequests = $serviceRequests->map(function ($request) {
-             return [
-                 'request_id' => $request->request_id,
-                 'user_id' => $request->user_id,
-                 'provider_id' => $request->provider_id,
-                 'status' => $request->status,
-                 'location_lat' => $request->location_lat,
-                 'location_lng' => $request->location_lng,
-                 'service_id' => $request->service_id,
-                 'service_name' => $request->service ? $request->service->service_name : null, // Include service name if available
-             ];
-         });
-
-         return response()->json([
-             'message' => 'Service requests retrieved successfully!',
-             'service_requests' => $serviceRequests,
-             'user_id' => $userId,
-             'status' => $status
-         ], 200);
-     }
+    
+        // Filter by status if provided
+        if ($status) {
+            $query->where('status', $status);
+        }
+    
+        // Get the filtered list of service requests
+        $serviceRequests = $query->get();
+    
+        // Map results to include the service_name and rating directly
+        $serviceRequests = $serviceRequests->map(function ($request) {
+            return [
+                'request_id' => $request->request_id,
+                'user_id' => $request->user_id,
+                'provider_id' => $request->provider_id,
+                'status' => $request->status,
+                'location_lat' => $request->location_lat,
+                'location_lng' => $request->location_lng,
+                'service_id' => $request->service_id,
+                'service_name' => $request->service ? $request->service->service_name : null, // Include service name if available
+                'rating' => $request->rating ? $request->rating : null, // Include rating if available
+            ];
+        });
+    
+        return response()->json([
+            'message' => 'Service requests retrieved successfully!',
+            'service_requests' => $serviceRequests,
+            'user_id' => $userId,
+            'status' => $status
+        ], 200);
+    }
 
 
      /**
@@ -75,7 +93,7 @@ class ServiceRequestController extends Controller
      public function getById($request_id)
      {
          // Find the service request by ID
-         $serviceRequest = ServiceRequest::findOrFail($request_id);
+         $serviceRequest = ServiceRequest::with(relations: ['user', 'provider'])->findOrFail($request_id);
 
          return response()->json([
              'message' => 'Service request retrieved successfully!',
@@ -140,35 +158,45 @@ class ServiceRequestController extends Controller
     public function update(Request $request, $request_id)
     {
         // Validate request data
-        $request->validate([
-            'status' => 'required|string',
-            'location_lat' => 'nullable|numeric',
-            'location_lng' => 'nullable|numeric',
-            'completion_time' => 'nullable|date',
-        ]);
+        try {
+            $request->validate([
+                'status' => 'required|string',
+                'location_lat' => 'nullable|numeric',
+                'location_lng' => 'nullable|numeric',
+                'completion_time' => 'nullable|date',
+            ]);
+    
+            // Find the service request by ID
+            $serviceRequest = ServiceRequest::findOrFail($request_id);
+    
+            // Update the service request
+            $serviceRequest->update($request->all());
+    
+            // Check the status and dispatch corresponding event
+            if ($request->status == "accepted") {
+                // Notify the service provider that the request is accepted
+                broadcast(new ServiceRequestAccepted($request_id, $serviceRequest->user_id, $serviceRequest->provider_id))->toOthers();
+            } elseif ($request->status == "cancelled") {
+                // Notify the service provider that the request is cancelled
+                broadcast(new ServiceRequestCancelled($request_id, $serviceRequest->provider_id))->toOthers();
+    
+                // Notify the user that their request is cancelled
+                broadcast(new ServiceRequestCancelledForUser($request_id, $serviceRequest->user_id))->toOthers();
+            }
+    
+            return response()->json([
+                'message' => 'Service request updated successfully!',
+                // 'service_request' => $serviceRequest
+            ], 200);
 
-        // Find the service request by ID
-        $serviceRequest = ServiceRequest::findOrFail($request_id);
-
-        // Update the service request
-        $serviceRequest->update($request->all());
-
-        // Check the status and dispatch corresponding event
-        if ($request->status == "accepted") {
-            // Notify the service provider that the request is accepted
-            broadcast(new ServiceRequestAccepted($request_id, $serviceRequest->user_id, $serviceRequest->provider_id))->toOthers();
-        } elseif ($request->status == "cancelled") {
-            // Notify the service provider that the request is cancelled
-            broadcast(new ServiceRequestCancelledForProvider($request_id, $serviceRequest->provider_id))->toOthers();
-
-            // Notify the user that their request is cancelled
-            broadcast(new ServiceRequestCancelledForUser($request_id, $serviceRequest->user_id))->toOthers();
+        } catch (\Exception $e) {
+            \Log::error('Error occurred: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Internal server error',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        return response()->json([
-            'message' => 'Service request updated successfully!',
-            'service_request' => $serviceRequest
-        ], 200);
+      
     }
 
     /**
@@ -200,5 +228,17 @@ class ServiceRequestController extends Controller
             'service_request' => $serviceRequest,
             'request_id' => $request_id
         ], 200);
+    }
+
+    public function updateLocation(Request $request)
+    {
+        $latitude = $request->input('latitude');
+        $longitude = $request->input('longitude');
+        $requestId = $request->input('requestId');  // Make sure the request contains a unique ID
+
+        // Fire the event to broadcast the location update
+        broadcast(new LocationUpdated($latitude, $longitude, $requestId))->toOthers();
+
+        return response()->json(['message' => 'Location updated', 'latitude' =>  $latitude, 'longitude' => $longitude]);
     }
 }

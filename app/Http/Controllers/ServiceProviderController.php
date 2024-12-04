@@ -28,7 +28,7 @@ class ServiceProviderController extends Controller
      *
      * @param  int  $provider_id
      * @return \Illuminate\Http\Response
-     */
+     */ 
     public function show($provider_id)
     {
         // Find the service provider by ID with its services
@@ -67,6 +67,18 @@ class ServiceProviderController extends Controller
         return response()->json([
             'message' => 'Service provider updated successfully!',
             'provider' => $provider
+        ], 200);
+    }
+
+    
+    public function getLocations()
+    {
+        // Get all service providers with their location details (latitude and longitude)
+        $locations = ServiceProvider::select('name', 'location_lat', 'location_lng')->get();
+
+        return response()->json([
+            'message' => 'Service provider locations retrieved successfully!',
+            'locations' => $locations
         ], 200);
     }
 }

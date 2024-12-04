@@ -7,6 +7,41 @@ use Illuminate\Http\Request;
 
 class ProviderServiceController extends Controller
 {
+
+   /**
+ * Get a list of services filtered by provider_id.
+ *
+ * @param Request $request
+ * @return \Illuminate\Http\JsonResponse
+ */
+public function index(Request $request)
+{
+    try {
+        // Get the provider_id from the request (query parameter)
+        $providerId = $request->query('provider_id');
+
+        // Query the services with optional filtering by provider_id
+        $query = ProviderService::with('serviceProvider');
+        
+        if ($providerId) {
+            $query->where('provider_id', $providerId);
+        }
+
+        $services = $query->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $services,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch services.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
     /**
      * Store a new provider service.
      *

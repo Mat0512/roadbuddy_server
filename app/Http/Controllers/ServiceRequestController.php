@@ -9,6 +9,7 @@ use App\Events\ServiceRequestCancelled;
 use App\Events\ServiceRequestCancelledForUser;
 use App\Events\LocationUpdated;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ServiceRequestController extends Controller
 {
@@ -20,6 +21,7 @@ class ServiceRequestController extends Controller
                 COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
                 COUNT(CASE WHEN status = 'accepted' THEN 1 END) as in_progress_count,
                 COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count
+                COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled_count
             ")
             ->first();
 
@@ -28,40 +30,36 @@ class ServiceRequestController extends Controller
             'data' => [
                 'pending' => $counts->pending_count,
                 'in_progress' => $counts->in_progress_count,
-                'completed' => $counts->completed_count,
+                'completed' => $counts->completed_count + $counts->cancelled_count,
             ],
         ], 200);
     }
 
     public function getList(Request $request)
     {
-        // Retrieve query parameters
         $providerId = $request->query('provider_id');
         $userId = $request->query('user_id');
         $status = $request->query('status');
-    
-        // Build the query with optional filtering
-        $query = ServiceRequest::with(['service', 'rating']); // Eager load related service and rating data
-    
-        // Filter by provider_id if provided
+
+        $query = ServiceRequest::select('requests.*', 'spr.rating_id', 'spr.rating', 'spr.comment')
+            ->leftJoin('service_provider_ratings as spr', 'requests.request_id', '=', 'spr.request_id')
+            ->with('service');
+
         if ($providerId) {
-            $query->where('provider_id', $providerId);
+            $query->where('requests.provider_id', $providerId);
         }
-    
+
         if ($userId) {
-            $query->where('user_id', $userId);
+            $query->where('requests.user_id', $userId);
         }
-    
-        // Filter by status if provided
+
         if ($status) {
-            $query->where('status', $status);
+            $query->where('requests.status', $status);
         }
-    
-        // Get the filtered list of service requests
+
         $serviceRequests = $query->get();
-    
-        // Map results to include the service_name and rating directly
-        $serviceRequests = $serviceRequests->map(function ($request) {
+
+        $mappedServiceRequests = $serviceRequests->map(function ($request) {
             return [
                 'request_id' => $request->request_id,
                 'user_id' => $request->user_id,
@@ -70,14 +68,18 @@ class ServiceRequestController extends Controller
                 'location_lat' => $request->location_lat,
                 'location_lng' => $request->location_lng,
                 'service_id' => $request->service_id,
-                'service_name' => $request->service ? $request->service->service_name : null, // Include service name if available
-                'rating' => $request->rating ? $request->rating : null, // Include rating if available
+                'service_name' => $request->service ? $request->service->service_name : null,
+                'rating' => $request->rating_id ? [
+                    'rating_id' => $request->rating_id,
+                    'rating' => $request->rating,
+                    'comment' => $request->comment
+                ] : null
             ];
         });
-    
+
         return response()->json([
             'message' => 'Service requests retrieved successfully!',
-            'service_requests' => $serviceRequests,
+            'service_requests' => $mappedServiceRequests,
             'user_id' => $userId,
             'status' => $status
         ], 200);
@@ -93,7 +95,7 @@ class ServiceRequestController extends Controller
      public function getById($request_id)
      {
          // Find the service request by ID
-         $serviceRequest = ServiceRequest::with(relations: ['user', 'provider'])->findOrFail($request_id);
+         $serviceRequest = ServiceRequest::with(relations: ['user', 'provider','service'])->findOrFail($request_id);
 
          return response()->json([
              'message' => 'Service request retrieved successfully!',

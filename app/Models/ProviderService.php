@@ -20,10 +20,15 @@ class ProviderService extends Model
         'service_name',
         'price',
         'description',
+        'image',
+        'status',
+        ''
     ];
 
     public function serviceProvider()
     {
         return $this->belongsTo(ServiceProvider::class, 'provider_id');
     }
+
+    
 }

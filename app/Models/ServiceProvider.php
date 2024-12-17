@@ -43,12 +43,23 @@ class ServiceProvider extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'provider_id',
+        'service_provider_name',
         'contact_info',
         'location_lat',
         'location_lng',
-        'provider_id', // Added for the relationship
+        'address', 
+        'business_permit_no',
+        'logo',
+        'business_hours_monday',
+        'business_hours_tuesday',
+        'business_hours_wednesday',
+        'business_hours_thursday',
+        'business_hours_friday',
+        'business_hours_saturday',
+        'business_hours_sunday',
     ];
+    
 
 
     public $timestamps = false;

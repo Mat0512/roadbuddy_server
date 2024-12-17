@@ -50,26 +50,58 @@ class ServiceProviderController extends Controller
      */
     public function update(Request $request, $provider_id)
     {
-        // Validate request data
-        $request->validate([
-            'name' => 'required|string',
-            'contact_info' => 'required|string',
-            'location_lat' => 'required|numeric',
-            'location_lng' => 'required|numeric',
-        ]);
+        try {
+            // Validate request data
+            $request->validate([
+                'service_names' => 'nullable|string',
+                'contact_info' => 'nullable|string',
+                'address' => 'nullable|string',
+                'location_lat' => 'nullable|numeric',
+                'location_lng' => 'nullable|numeric',
+                // 'business_permit_no' => 'nullable|string|unique:service_providers,business_permit_no,' . $provider_id,
+                'business_hours_monday' => 'nullable|string',
+                'business_hours_tuesday' => 'nullable|string',
+                'business_hours_wednesday' => 'nullable|string',
+                'business_hours_thursday' => 'nullable|string',
+                'business_hours_friday' => 'nullable|string',
+                'business_hours_saturday' => 'nullable|string',
+                'business_hours_sunday' => 'nullable|string',
+                'address' => 'nullable|string',         
+            ]);
 
-        // Find the service provider by ID
-        $provider = ServiceProvider::findOrFail($provider_id);
+            // Find the service provider by ID
+            $provider = ServiceProvider::where('provider_id', $provider_id)->firstOrFail();
 
-        // Update provider details
-        $provider->update($request->all());
+            // Update provider details
+            foreach ($request->all() as $key => $value) {
+                $provider->$key = $value;
+            }
 
-        return response()->json([
-            'message' => 'Service provider updated successfully!',
-            'provider' => $provider
-        ], 200);
+            $provider->save();
+
+            return response()->json([
+                'message' => 'Service provider updated successfully!',
+                'provider' => $provider,
+                // 'request' => $request->all()
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Service provider not found'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while updating the service provider',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-
+    
     
     public function getLocations()
     {

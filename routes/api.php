@@ -40,7 +40,7 @@ Route::prefix('/provider-services')->group(function () {
 
     Route::post('', [ProviderServiceController::class, 'store']);
     // Update provider service
-    Route::put('{provider_service_id}', [ProviderServiceController::class, 'update']);
+    Route::post('{provider_service_id}', [ProviderServiceController::class, 'update']);
     // Delete provider service
     Route::delete('{provider_service_id}', [ProviderServiceController::class, 'destroy']);
 });
@@ -48,12 +48,13 @@ Route::prefix('/provider-services')->group(function () {
 Route::prefix('/service-providers')->group(function () {
 
     Route::get('/locations', [ServiceProviderController::class, 'getLocations']);
+     // Update a service provider
+     Route::put('{provider_id}', [ServiceProviderController::class, 'update']);
     // List all service providers
     Route::get('', [ServiceProviderController::class, 'index']);
     // Get a specific service provider by ID
     Route::get('{provider_id}', [ServiceProviderController::class, 'show']);
-    // Update a service provider
-    Route::put('{provider_id}', [ServiceProviderController::class, 'update']);
+   
 
 });
 

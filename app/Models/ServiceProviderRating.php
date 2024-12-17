@@ -48,6 +48,7 @@ class ServiceProviderRating extends Model
         'request_id',
         'comment',
         'rating',
+        'rating_id',    
     ];
 
     /**
@@ -65,11 +66,11 @@ class ServiceProviderRating extends Model
 
     public function serviceProvider()
     {
-        return $this->belongsTo(ServiceProvider::class, 'service_provider_id');
+        return $this->belongsTo(ServiceProvider::class, 'provider_id');
     }
 
     public function serviceRequest()
     {
-        return $this->belongsTo(ServiceProviderRating::class, 'request_id');
+        return $this->belongsTo(ServiceRequest::class, 'request_id', 'request_id');
     }
 }   

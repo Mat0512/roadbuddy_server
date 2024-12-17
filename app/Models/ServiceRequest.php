@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
 class ServiceRequest extends Model
 {
     use HasFactory;
@@ -19,7 +18,7 @@ class ServiceRequest extends Model
 
     protected $fillable = [
         'user_id',
-        'provider_id',
+        'service_provider_id',
         'status',
         'request_time',
         'completion_time',

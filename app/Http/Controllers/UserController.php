@@ -12,71 +12,113 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
+use App\Utils\FileUploader;
+
 
 
 class UserController extends Controller
 {
-    // User signup method
-    public function signup(Request $request)
-    {
-        // Validate the request data
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'phone' => 'required|string|max:15',
-            'password' => 'required|string|min:8|confirmed',
-            'username' => 'required|string|max:255|unique:users',
-            'type' => 'required|string|in:user,service_provider,driver', // Ensure type is valid
-            'license_number' => 'nullable|string|max:255', // Optional for drivers
-            'vehicle' => 'nullable|string|max:255', // Optional for drivers
-            // 'profile_picture' => 'nullable|image|max:2048', // Optional for service providers and drivers
-            'contact_info' => 'nullable|string|max:255', // Optional for service providers
-            'location_lat' => 'nullable|numeric', // Optional for service providers
-            'location_lng' => 'nullable|numeric', // Optional for service providers
-        ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-        Log::info('hello');
+public function signup(Request $request)
+{
+    // Validate the request data
+    $validator = Validator::make($request->all(), [
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:users',
+        'phone' => 'required|string|max:15',
+        'password' => 'required|string|min:8|confirmed',
+        'username' => 'required|string|max:255|unique:users',
+        'type' => 'required|string|in:user,service_provider,driver', // Ensure type is valid
+        'license_number' => 'nullable|string|max:255', // Optional for drivers
+        'vehicle' => 'nullable|string|max:255', // Optional for drivers
+        'profile_picture' => 'nullable|image|max:2048', // Optional for service providers and drivers
+        'contact_info' => 'nullable|string|max:255', // Optional for service providers
+        'business_permit_no' => 'nullable|string|max:255|unique:service_providers', // Optional for service providers
+        'logo' => 'nullable|image|max:2048', // Logo image for service provider
+        'business_permit_image' => 'nullable|image|max:2048', // Business permit image
+        'address' => 'nullable|string|max:255', // Add this to validator
+        'business_hours_monday' => 'nullable|string|max:50',
+        'business_hours_tuesday' => 'nullable|string|max:50',
+        'business_hours_wednesday' => 'nullable|string|max:50',
+        'business_hours_thursday' => 'nullable|string|max:50',
+        'business_hours_friday' => 'nullable|string|max:50',
+        'business_hours_saturday' => 'nullable|string|max:50',
+        'business_hours_sunday' => 'nullable|string|max:50',
+    ]);
 
-        // Create the user
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'password' => Hash::make($request->password),
-            'username' => $request->username,
-            'type' => $request->type,
-        ]);
-
-        Log::info('Your user value:', ['user' => $user]);
-
-
-        // If user type is 'service_provider', create a ServiceProvider record
-        if ($user->type === 'service_provider') {
-            $serviceProvider = ServiceProvider::create([
-                'name' => $request->name,
-                'contact_info' => $request->contact_info,
-                'location_lat' => $request->location_lat,
-                'location_lng' => $request->location_lng,
-                'profile_picture' => $request->profile_picture, // Ensure you handle file upload separately
-                'provider_id' => $user->user_id, // Link service provider to user
-            ]);
-        }
-
-        // If user type is 'driver', create a Driver record
-        if ($user->type === 'driver') { // line 63
-            $driver = Driver::create([
-                'license_number' => $request->license_number,
-                'vehicle' => $request->vehicle,
-                'profile_picture' => $request->profile_picture, // Ensure you handle file upload separately
-                'driver_id' => $user->user_id, // Link driver to user
-            ]);
-        }
-
-        return response()->json(['message' => 'User created successfully!', 'user' => $user], 201);
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
     }
+
+    // Create the user
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'phone' => $request->phone,
+        'password' => Hash::make($request->password),
+        'username' => $request->username,
+        'type' => $request->type,   
+        // 'profile_picture' => FileUploader::handleFileUpload($request, 'profile_picture'), // Handle file upload
+
+    ]);
+
+    // If user type is 'service_provider', create a ServiceProvider record
+    if ($user->type === 'service_provider') {
+        $serviceProviderData = [
+            'provider_id' => $user->user_id,
+            'service_provider_name' => $request->name,
+            'contact_info' => $request->contact_info,
+            'address' => $request->address,
+            'business_permit_no' => $request->business_permit_no,
+            'business_hours_monday' => $request->business_hours_monday,
+            'business_hours_tuesday' => $request->business_hours_tuesday,
+            'business_hours_wednesday' => $request->business_hours_wednesday,
+            'business_hours_thursday' => $request->business_hours_thursday,
+            'business_hours_friday' => $request->business_hours_friday,
+            'business_hours_saturday' => $request->business_hours_saturday,
+            'business_hours_sunday' => $request->business_hours_sunday,
+            'location_lat' => $request->location_lat,
+            'location_lng' => $request->location_lng,
+        ];
+
+        // Handle file uploads
+        if ($request->hasFile('logo')) {
+            $logo = FileUploader::uploadImageToCloudinary($request->file('logo'));
+            $serviceProviderData['logo'] = $logo;
+        }
+
+        if ($request->hasFile('business_permit_image')) {
+            $permitImage = FileUploader::uploadImageToCloudinary($request->file('business_permit_image'));
+            $serviceProviderData['business_permit_image'] = $permitImage;
+        }   
+
+        // Create the service provider record
+        $serviceProvider = ServiceProvider::create($serviceProviderData);
+        
+    }
+
+    // If user type is 'driver', create a Driver record
+    if ($user->type === 'driver') {
+        $driver = Driver::create([
+            'license_number' => $request->license_number,
+            'vehicle' => $request->vehicle,
+            'driver_id' => $user->user_id   , // Link driver to user
+        ]);
+    }
+
+    return response()->json(['message' => 'User created successfully!', 'user' => $user], 201);
+}
+
+/**
+
+ * Handle file uploads for profile picture.
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @param  string  $fieldName
+ * @return string|null
+ */
+
+
 
     // User login method
     public function login(Request $request)

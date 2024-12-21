@@ -7,6 +7,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Support\Facades\Log;
 
 class ServiceRequestCancelled implements ShouldBroadcast
 {
@@ -23,11 +24,18 @@ class ServiceRequestCancelled implements ShouldBroadcast
 
     public function broadcastOn()
     {
+        Log::info('channel: ' . 'user.' . $this->userId);
         return new Channel('user.' . $this->userId);
     }
 
     public function broadcastAs()
+    {   
+        return 'service.request.cancel';
+    }
+    public function broadcastWith()
     {
-        return 'service.request.cancelled';
+        return [
+            'request_id' => $this->requestId
+        ];
     }
 }

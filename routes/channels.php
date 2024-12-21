@@ -2,7 +2,7 @@
 
             use Illuminate\Support\Facades\Broadcast;
             use App\Models\User;
-
+            use Illuminate\Support\Facades\Log;
             /*
             |--------------------------------------------------------------------------
             | Broadcast Channels
@@ -15,6 +15,10 @@
             */
 
             Broadcast::channel('user.{userId}', function ($user, $userId) {
+                Log::info('Broadcast::channel user.{userId} data: ' . json_encode([
+                    'user' => $user,
+                    'userId' => $userId
+                ]));
                 return (int) $user->id === (int) $userId;
             });
 

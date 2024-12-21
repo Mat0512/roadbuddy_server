@@ -66,7 +66,7 @@ public function signup(Request $request)
     if ($user->type === 'service_provider') {
         $serviceProviderData = [
             'provider_id' => $user->user_id,
-            'service_provider_name' => $request->name,
+            'service_provider_name' => $request->service_provider_name,
             'contact_info' => $request->contact_info,
             'address' => $request->address,
             'business_permit_no' => $request->business_permit_no,

@@ -20,7 +20,7 @@ class ServiceRequestController extends Controller
             ->selectRaw("
                 COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
                 COUNT(CASE WHEN status = 'accepted' THEN 1 END) as in_progress_count,
-                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count
+                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count,
                 COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled_count
             ")
             ->first();
@@ -84,7 +84,7 @@ class ServiceRequestController extends Controller
             'status' => $status
         ], 200);
     }
-
+        
 
      /**
       * Get a specific service request by ID.
@@ -118,16 +118,18 @@ class ServiceRequestController extends Controller
                  'location_lng' => 'required|numeric',
              ]);
 
+             Log::info('Request data: ' . json_encode($request->all()));
+
              // Create a new service request
              $serviceRequest = ServiceRequest::create($request->all());
 
-             // Optionally, broadcast the event here if needed
-
+            //  // Optionally, broadcast the event here if needed
              broadcast(new ServiceRequestCreated($serviceRequest->request_id, $request->user_id, $request->provider_id))->toOthers();
             //  broadcast(new ServiceRequestCreated(1, 2, 3))->toOthers();
 
              return response()->json([
                  'message' => 'Service request created successfully!',
+                 
                  'service_request' => $serviceRequest,
                  'serviceRequest.id' => $serviceRequest->request_id,
                  'user.id' => $serviceRequest->user_id,
@@ -159,7 +161,6 @@ class ServiceRequestController extends Controller
      */
     public function update(Request $request, $request_id)
     {
-        // Validate request data
         try {
             $request->validate([
                 'status' => 'required|string',
@@ -169,7 +170,13 @@ class ServiceRequestController extends Controller
             ]);
     
             // Find the service request by ID
-            $serviceRequest = ServiceRequest::findOrFail($request_id);
+            $serviceRequest = ServiceRequest::find($request_id);
+            
+            if (!$serviceRequest) {
+                return response()->json([
+                    'message' => 'Service request not found',
+                ], 404);        
+            }
     
             // Update the service request
             $serviceRequest->update($request->all());
@@ -177,13 +184,15 @@ class ServiceRequestController extends Controller
             // Check the status and dispatch corresponding event
             if ($request->status == "accepted") {
                 // Notify the service provider that the request is accepted
+                Log::info('ServiceRequestAccepted event triggered');
                 broadcast(new ServiceRequestAccepted($request_id, $serviceRequest->user_id, $serviceRequest->provider_id))->toOthers();
             } elseif ($request->status == "cancelled") {
-                // Notify the service provider that the request is cancelled
-                broadcast(new ServiceRequestCancelled($request_id, $serviceRequest->provider_id))->toOthers();
+                // Notify the user that the request is cancelled
+                Log::info('ServiceRequestCancelled event triggered');
+                broadcast(new ServiceRequestCancelled($request_id, $serviceRequest->user_id))->toOthers();
     
                 // Notify the user that their request is cancelled
-                broadcast(new ServiceRequestCancelledForUser($request_id, $serviceRequest->user_id))->toOthers();
+                // broadcast(new ServiceRequestCancelledForUser($request_id, $serviceRequest->user_id))->toOthers();
             }
     
             return response()->json([

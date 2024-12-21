@@ -2,11 +2,12 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\Channel;    
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Support\Facades\Log;
 
 class ServiceRequestAccepted implements ShouldBroadcast
 {
@@ -21,11 +22,12 @@ class ServiceRequestAccepted implements ShouldBroadcast
         $this->requestId = $requestId;
         $this->userId = $userId;
         $this->providerId = $providerId;
+        
     }
 
     public function broadcastOn()
     {
-        return new Channel('service-provider.' . $this->providerId);
+        return new Channel('user.' . $this->userId);
     }
 
     public function broadcastAs()

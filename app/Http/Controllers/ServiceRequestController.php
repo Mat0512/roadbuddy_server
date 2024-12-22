@@ -116,6 +116,7 @@ class ServiceRequestController extends Controller
                  'status' => 'required|string',
                  'location_lat' => 'required|numeric',
                  'location_lng' => 'required|numeric',
+                 'payment_method' => 'required|string',
              ]);
 
              Log::info('Request data: ' . json_encode($request->all()));

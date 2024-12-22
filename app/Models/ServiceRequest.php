@@ -21,6 +21,7 @@ class ServiceRequest extends Model
         'provider_id',
         'service_provider_id',
         'status',
+        'payment_method',
         'request_time',
         'completion_time',
         'location_lat',

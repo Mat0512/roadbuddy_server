@@ -121,7 +121,7 @@ class ServiceProviderController extends Controller
         // Get all service providers with their location details (latitude and longitude)
         $locations = ServiceProvider::select('service_provider_name', 'location_lat', 'location_lng')->get();
 
-        return response()->json([
+        return response()->json([   
             'message' => 'Service provider locations retrieved successfully!',
             'locations' => $locations
         ], 200);

@@ -46,6 +46,8 @@ public function signup(Request $request)
         'business_hours_saturday' => 'nullable|string|max:50',
         'business_hours_sunday' => 'nullable|string|max:50',
         'category' => 'nullable|string|max:255',
+        'service_provider_name' => 'nullable|string|max:255',
+
 
     ]);
 
@@ -83,6 +85,8 @@ public function signup(Request $request)
             'location_lat' => $request->location_lat,
             'location_lng' => $request->location_lng,
             'category' => $request->category,
+            'service_provider_name' => $request->service_provider_name,
+
 
         ];
 

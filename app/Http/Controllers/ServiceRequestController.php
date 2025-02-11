@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\ServiceRequest;
+use App\Models\ProviderService;
+
 use App\Events\ServiceRequestCreated;
 use App\Events\ServiceRequestAccepted;
 use App\Events\ServiceRequestCancelled; 
@@ -10,9 +12,19 @@ use App\Events\ServiceRequestCancelledForUser;
 use App\Events\LocationUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
+use App\Services\PushNotificationService;
 
 class ServiceRequestController extends Controller
 {
+
+    public function __construct(PushNotificationService $pushNotificationService)
+    {
+        $this->pushNotificationService = $pushNotificationService;
+    }
+   
 
     public function getRequestCounts($providerId)
     {
@@ -125,8 +137,8 @@ class ServiceRequestController extends Controller
              $serviceRequest = ServiceRequest::create($request->all());
 
             //  // Optionally, broadcast the event here if needed
-             broadcast(new ServiceRequestCreated($serviceRequest->request_id, $request->user_id, $request->provider_id))->toOthers();
-            //  broadcast(new ServiceRequestCreated(1, 2, 3))->toOthers();
+             broadcast(new ServiceRequestCreated((string) $serviceRequest->request_id, (string) $request->user_id, (string) $request->provider_id))->toOthers();
+             $this->pushNotificationService->sendNotification($request->provider_id, "New Request", "Driver make a request on your service.");
 
              return response()->json([
                  'message' => 'Service request created successfully!',
@@ -143,6 +155,7 @@ class ServiceRequestController extends Controller
                  'message' => 'Validation failed',
                  'errors' => $e->errors(),
              ], 422);
+             
          } catch (\Exception $e) {
              // Handle general errors
              return response()->json([
@@ -167,6 +180,8 @@ class ServiceRequestController extends Controller
                 'status' => 'required|string',
                 'location_lat' => 'nullable|numeric',
                 'location_lng' => 'nullable|numeric',
+                'location_lng' => 'nullable|numeric',
+                'cancellation_reason' => 'nullable|string',
                 'completion_time' => 'nullable|date',
             ]);
     
@@ -252,5 +267,86 @@ class ServiceRequestController extends Controller
         broadcast(new LocationUpdated($latitude, $longitude, $requestId))->toOthers();
 
         return response()->json(['message' => 'Location updated', 'latitude' =>  $latitude, 'longitude' => $longitude]);
+    }
+
+    public function getServiceRequest($id)
+    {
+        try {
+            $serviceRequest = ServiceRequest::with(['service'   ])
+                                   ->find($id);
+            return response()->json($serviceRequest, 200);
+        } catch (Exception $error) {
+            return response()->json(['error' => $error->getMessage()], status: 500);
+        }
+    }
+
+    public function getTotalRevenuePerMonth($userId)
+    {
+        try {
+            $query = ServiceRequest::where('status', 'completed');
+    
+            if ($userId) {
+                $query->where('provider_id', $userId);
+            }
+    
+            $results = $query
+                ->with(['service' => function ($query) {
+                    $query->select('provider_service_id', 'price');
+                }])
+                ->select(
+                    DB::raw('DATE_FORMAT(request_time, "%b") as month'),
+                    DB::raw('MONTH(request_time) as month_number'), // Add month number for sorting
+                    'service_id'
+                )
+                ->get()
+                ->groupBy('month')  
+                ->map(function ($group) {
+                    return [
+                        'month' => $group->first()->month,
+                        'total_price' => $group->sum(function ($request) {
+                            return $request->service->price;
+                        }),
+                        'month_number' => $group->first()->month_number, // Include month number for sorting
+                    ];
+                })
+                ->sortBy('month_number') // Sort by month number
+                ->map(function ($item) {
+                    return [
+                        'month' => $item['month'],
+                        'total_price' => $item['total_price'],
+                    ];
+                });
+    
+            return response()->json($results->values(), 200); // Reset keys after sorting
+        } catch (Exception $error) {
+            return response()->json(['error' => $error->getMessage()], 500);
+        }
+    }
+
+    public function getTotalAvailedServices($userId)
+    {
+        try {
+         
+    
+            $query = ProviderService::join('requests', 'service_provider_services.provider_service_id', '=', 'requests.service_id')
+                ->where('requests.status', 'completed'); // Filter by completed status
+    
+            if ($userId) {
+                $query->where('service_provider_services.provider_id', $userId); // Filter by provider_id
+            }
+    
+            $results = $query
+                ->select(
+                    'service_provider_services.service_name',
+                    DB::raw('COUNT(service_provider_services.service_name) as service_count') // Count occurrences
+                )
+                ->groupBy('service_provider_services.service_name') // Group by service_name
+                ->orderBy('service_provider_services.service_name') // Order by service_name
+                ->get();
+    
+            return response()->json($results, 200); // Return JSON response
+        } catch (Exception $error) {
+            return response()->json(['error' => $error->getMessage()], 500); // Handle errors
+        }
     }
 }

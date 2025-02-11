@@ -21,6 +21,7 @@ class UserController extends Controller
 
 public function signup(Request $request)
 {
+    try {
     // Validate the request data
     $validator = Validator::make($request->all(), [
         'name' => 'required|string|max:255',
@@ -44,6 +45,8 @@ public function signup(Request $request)
         'business_hours_friday' => 'nullable|string|max:50',
         'business_hours_saturday' => 'nullable|string|max:50',
         'business_hours_sunday' => 'nullable|string|max:50',
+        'category' => 'nullable|string|max:255',
+
     ]);
 
     if ($validator->fails()) {
@@ -79,6 +82,8 @@ public function signup(Request $request)
             'business_hours_sunday' => $request->business_hours_sunday,
             'location_lat' => $request->location_lat,
             'location_lng' => $request->location_lng,
+            'category' => $request->category,
+
         ];
 
         // Handle file uploads
@@ -107,6 +112,10 @@ public function signup(Request $request)
     }
 
     return response()->json(['message' => 'User created successfully!', 'user' => $user], 201);
+   } catch (\Exception $e) {
+    return response()->json(['error' => $e->getMessage()], 500);
+
+   }
 }
 
 /**

@@ -27,7 +27,8 @@ class ServiceRequest extends Model
         'location_lat',
         'location_lng',
         'service_id',
-    ];
+        'cancellation_reason',
+    ];  
 
     public $timestamps = false;
 
@@ -44,8 +45,9 @@ class ServiceRequest extends Model
 
     public function service()
     {
-        return $this->belongsTo(ProviderService::class, 'service_id');
+       return $this->belongsTo(ProviderService::class, 'service_id');
     }
+    
         
     public function rating()
     {

@@ -66,6 +66,8 @@ Route::prefix('/service-requests')->group(function () {
     Route::get('/', [ServiceRequestController::class, 'getList']);
 
     Route::post('/location', [ServiceRequestController::class, 'updateLocation']);
+   
+    Route::get('/purhchase-details/{id}', [ServiceRequestController::class, 'getServiceRequest']);
 
     // Get service request by id
     Route::get('/{request_id}', [ServiceRequestController::class, 'getById']);
@@ -76,7 +78,7 @@ Route::prefix('/service-requests')->group(function () {
     // Update a service request by ID
     Route::put('/{request_id}', [ServiceRequestController::class, 'update']);
 
-    // Rate a service request by ID
+    // Rate a    request by ID
     Route::patch('/{request_id}/rate', [ServiceRequestController::class, 'rate']);
     
 
@@ -92,13 +94,37 @@ Route::prefix('/rating')->group(function () {
 });
 
 Route::prefix('/chat')->group(function() {
- // Route to send a message
- Route::middleware('auth:sanctum')->post('/send', [ChatController::class, 'sendMessage'])->name(name: 'chat.send');
-                                                                                                                                                                          
- // Route to list all chat rooms for the authenticated user
- Route::middleware('auth:sanctum')->get('/rooms', [ChatController::class, 'listChatRooms'])->name('chat.rooms');
+    // Route to send a message
+    Route::middleware('auth:sanctum')->post('/send', [ChatController::class, 'sendMessage'])->name(name: 'chat.send');
+                                                                                                                                                                            
+    // Route to list all chat rooms for the authenticated user
+    Route::middleware('auth:sanctum')->get('/rooms', [ChatController::class, 'listChatRooms'])->name('chat.rooms');
 
- // Route to get messages with a specific user
- Route::middleware('auth:sanctum')->get('/messages/{id}', [ChatController::class, 'getMessages'])->name('chat.messages');
+    // Route to get messages with a specific user
+    Route::middleware('auth:sanctum')->get('/messages/{id}', [ChatController::class, 'getMessages'])->name('chat.messages');
 });
 
+Route::prefix('/analytics')->group(function() {
+    // Route to send a message
+    Route::middleware('auth:sanctum')->get('/revenue/{userId}', [ServiceRequestController::class, 'getTotalRevenuePerMonth']);
+                                                                                                                                                                            
+    // Route to list all chat rooms for the authenticated user
+    Route::middleware('auth:sanctum')->get('/services/{userId}', [ServiceRequestController::class, 'getTotalAvailedServices']);
+
+    // Route to get messages with a specific user
+
+});
+
+// PUSHER BEAMS Notification
+
+// Route::middleware('auth:api')->get('/pusher/beams-auth', function (Request $request) {
+//     $userID = $request->user()->id; // If you use a different auth system, do your checks here
+//     $userIDInQueryParam = Input::get('user_id');
+
+//     if ($userID != $userIDInQueryParam) {
+//         return response('Inconsistent request', 401);
+//     } else {
+//         $beamsToken = $beamsClient->generateToken($userID);
+//         return response()->json($beamsToken);
+//     }
+// }); 

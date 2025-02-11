@@ -30,5 +30,10 @@ class ProviderService extends Model
         return $this->belongsTo(ServiceProvider::class, 'provider_id');
     }
 
+    public function serviceRequest()
+    {
+        return $this->hasMany(ServiceRequest::class, 'service_id');
+    }
+
     
 }

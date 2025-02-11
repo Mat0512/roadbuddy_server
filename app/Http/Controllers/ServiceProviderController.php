@@ -12,16 +12,27 @@ class ServiceProviderController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
-    {
-        // Get all service providers
-        $providers = ServiceProvider::all();
 
-        return response()->json([
-            'message' => 'Service providers retrieved successfully!',
-            'providers' => $providers
-        ], 200);
-    }
+     public function index(Request $request)
+     {
+         // Start with a base query
+         $query = ServiceProvider::query();
+     
+         // Check if the 'category' parameter is present in the request
+         if ($request->has('category')) {
+             // Filter the service providers by the specified category
+             $query->where('category', $request->category);
+         }
+     
+         // Execute the query and get the results
+         $providers = $query->get();
+     
+         // Return the response with the filtered (or all) service providers
+         return response()->json([
+             'message' => 'Service providers retrieved successfully!',
+             'providers' => $providers
+         ], 200);
+     }
 
     /**
      * Get a specific service provider by ID.
@@ -29,6 +40,7 @@ class ServiceProviderController extends Controller
      * @param  int  $provider_id
      * @return \Illuminate\Http\Response
      */ 
+
     public function show($provider_id)
     {
         // Find the service provider by ID with its services
@@ -48,6 +60,7 @@ class ServiceProviderController extends Controller
      * @param  int  $provider_id
      * @return \Illuminate\Http\Response
      */
+
     public function update(Request $request, $provider_id)
     {
         try {
@@ -106,7 +119,7 @@ class ServiceProviderController extends Controller
     public function getLocations()
     {
         // Get all service providers with their location details (latitude and longitude)
-        $locations = ServiceProvider::select('name', 'location_lat', 'location_lng')->get();
+        $locations = ServiceProvider::select('service_provider_name', 'location_lat', 'location_lng')->get();
 
         return response()->json([
             'message' => 'Service provider locations retrieved successfully!',

@@ -58,6 +58,8 @@ class ServiceProvider extends Model
         'business_hours_friday',
         'business_hours_saturday',
         'business_hours_sunday',
+        'category'
+
     ];
     
 

@@ -51,7 +51,7 @@ return [
 
             'port' => '3306',
             'database' => 'roadbuddy',
-            'username' => 'roadbuddy_user',
+            'username' => 'test',
             'password' => '1234',
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => 'utf8mb4',

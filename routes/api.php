@@ -9,7 +9,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\SPRatingController;
 use App\Http\Controllers\ChatController;
-use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ContactController;
 
 
 /*
@@ -114,6 +114,9 @@ Route::prefix('/analytics')->group(function() {
     // Route to get messages with a specific user
 
 });
+
+Route::post('/send-email', [ContactController::class, 'sendEmail']);
+
 
 // PUSHER BEAMS Notification
 

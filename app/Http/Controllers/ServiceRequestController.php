@@ -15,16 +15,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
-use App\Services\PushNotificationService;
 
 class ServiceRequestController extends Controller
 {
-
-    public function __construct(PushNotificationService $pushNotificationService)
-    {
-        $this->pushNotificationService = $pushNotificationService;
-    }
-   
 
     public function getRequestCounts($providerId)
     {
@@ -138,7 +131,7 @@ class ServiceRequestController extends Controller
 
             //  // Optionally, broadcast the event here if needed
              broadcast(new ServiceRequestCreated((string) $serviceRequest->request_id, (string) $request->user_id, (string) $request->provider_id))->toOthers();
-             $this->pushNotificationService->sendNotification($request->provider_id, "New Request", "Driver make a request on your service.");
+            //  $this->pushNotificationService->sendNotification($request->provider_id, "New Request", "Driver make a request on your service.");
 
              return response()->json([
                  'message' => 'Service request created successfully!',

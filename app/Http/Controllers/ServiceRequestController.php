@@ -173,7 +173,6 @@ class ServiceRequestController extends Controller
                 'status' => 'required|string',
                 'location_lat' => 'nullable|numeric',
                 'location_lng' => 'nullable|numeric',
-                'location_lng' => 'nullable|numeric',
                 'cancellation_reason' => 'nullable|string',
                 'completion_time' => 'nullable|date',
             ]);

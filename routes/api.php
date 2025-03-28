@@ -36,6 +36,9 @@ Route::prefix('/auth')->group(function () {
     });
 });
 
+Route::put("/user/subscription", [UserController::class, 'updateSubscription']);
+
+
 
 Route::prefix('/provider-services')->group(function () {
     // Store new provider service

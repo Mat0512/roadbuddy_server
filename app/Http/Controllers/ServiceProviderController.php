@@ -84,7 +84,6 @@ class ServiceProviderController extends Controller
                 'business_hours_friday' => 'nullable|string',
                 'business_hours_saturday' => 'nullable|string',
                 'business_hours_sunday' => 'nullable|string',
-                'address' => 'nullable|string',         
             ]);
 
             // Find the service provider by ID

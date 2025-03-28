@@ -255,4 +255,29 @@ public function signup(Request $request)
             return response()->json(['error' => $error->getMessage()], 500);
         }
     }
+
+    public function updateSubscription(Request $request)
+    {
+
+        // Validate the request data
+        $validator = Validator::make($request->all(), [
+            'userId' => 'required|string|max:255',
+            'isSubscribed' => 'required|boolean',
+
+        ]);
+
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $user = User::find($request->userId);
+
+        // Update user details
+        $user->isSubscribed = $request->isSubscribed;
+        $user->save();
+
+
+        return response()->json(['message' => 'User updated successfully!', 'user' => $user], 200);
+    }
 }

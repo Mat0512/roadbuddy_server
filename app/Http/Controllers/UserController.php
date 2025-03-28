@@ -6,13 +6,14 @@ use App\Models\User;
 use App\Models\ServiceProvider;
 use App\Models\Driver;
 
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
-use App\Utils\FileUploader;
+use App\Utils\FileUploader; 
 
 
 
@@ -85,7 +86,6 @@ public function signup(Request $request)
             'location_lat' => $request->location_lat,
             'location_lng' => $request->location_lng,
             'category' => $request->category,
-            'service_provider_name' => $request->service_provider_name,
 
 
         ];
@@ -149,6 +149,9 @@ public function signup(Request $request)
     // Attempt to log the user in using username instead of email
     if (Auth::attempt($request->only('username', 'password'))) {
         $user = Auth::user();
+
+        $user->load('serviceProviders');
+
         $token = $user->createToken('authToken')->plainTextToken;
 
         return response()->json([
@@ -165,7 +168,7 @@ public function signup(Request $request)
     // Get user details method
     public function getUser(Request $request)
     {
-        $user = Auth::user(); // Get the authenticated user
+        $user = Auth::user()->load('serviceProviders'); // Get the authenticated user
         return response()->json($user, 200);
     }
 
@@ -179,6 +182,7 @@ public function signup(Request $request)
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->user_id,
             'phone' => 'sometimes|string|max:15',
+            'isSubscribed' => 'sometimes|boolean|max:15',
             'username' => 'sometimes|string|max:255|unique:users,username,' . $user->user_id,
         ]);
 
@@ -187,7 +191,7 @@ public function signup(Request $request)
         }
 
         // Update user details
-        $user->update($request->only('name', 'email', 'phone', 'username'));
+        $user->update($request->only('name', 'email', 'phone', 'username', 'isSubscribed'));
 
         return response()->json(['message' => 'User updated successfully!', 'user' => $user], 200);
     }
@@ -217,5 +221,38 @@ public function signup(Request $request)
         $user->save();
 
         return response()->json(['message' => 'Password updated successfully!'], 200);
+    }
+
+    
+    public function uploadPhoto (Request $request ) {
+        try {
+
+            $user = Auth::user();
+            $found_user = User::find($user->user_id);
+
+            $request->validate([
+                'photo' => 'required|image|max:2048',
+            ]);
+
+
+            $uploaded_picture = "";
+
+            if ($request->hasFile('photo')) {
+                $uploaded_picture = FileUploader::uploadImageToCloudinary($request->file('photo'));
+                $found_user->profile_picture = $uploaded_picture;
+                $found_user->save();
+
+                return response()->json( ["message" => "Profile picture uploaded"], 200);
+            } 
+
+            return response()->json(["error" =>$request->file('photo')], 400);
+            
+            // return response()->json(["message" => "api route workinh"], 201);
+
+
+
+        } catch (\Exception $error) {
+            return response()->json(['error' => $error->getMessage()], 500);
+        }
     }
 }

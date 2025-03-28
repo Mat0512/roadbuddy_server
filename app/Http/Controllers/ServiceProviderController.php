@@ -4,6 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\ServiceProvider;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+use App\Utils\FileUploader; 
+
+
 
 class ServiceProviderController extends Controller
 {
@@ -125,5 +130,39 @@ class ServiceProviderController extends Controller
             'message' => 'Service provider locations retrieved successfully!',
             'locations' => $locations
         ], 200);
+    }
+
+    public function uploadPhoto (Request $request ) {
+        try {
+
+            $user = Auth::user();
+            $found_sp = ServiceProvider::find($user->user_id);
+
+            $request->validate([
+                'business_permit' => 'nullable|image|max:2048',
+                'busines_logo' => 'nullable|image|max:2048',
+            ]);
+
+
+
+            if ($request->hasFile('logo')) {
+                $uploaded_logo = FileUploader::uploadImageToCloudinary($request->file('logo'));
+                $found_sp->logo = $uploaded_logo;
+                $found_sp->save();
+
+            } 
+
+            if ($request->hasFile('business_permit')) {
+                $uploaded_permit = FileUploader::uploadImageToCloudinary($request->file('business_permit'));
+                $found_sp->business_permit = $uploaded_permit;
+                $found_sp->save();
+
+            } 
+
+            return response()->json( ["message" => "picture uploaded"], 200);
+            
+        } catch (\Exception $error) {
+            return response()->json(['error' => $error->getMessage()], 500);
+        }
     }
 }

@@ -30,6 +30,9 @@ Route::prefix('/auth')->group(function () {
         Route::get('user', [UserController::class, 'getUser']);
         Route::put('user/update', action: [UserController::class, 'updateUser']);
         Route::put("user/update-password", [UserController::class, 'updatePassword']);
+        Route::post('user/update-photo', action: [UserController::class, 'uploadPhoto']);
+        Route::post('user/sp-update-photo', action: [ServiceProviderController::class, 'uploadPhoto']);
+
     });
 });
 

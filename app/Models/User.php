@@ -7,6 +7,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens; // Add this
 
+use App\Models\ServiceProvider;
+
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable; // Use HasApiTokens to fix the createToken issue
@@ -58,6 +60,8 @@ class User extends Authenticatable
         'password',
         'type',
         'username',
+        'profile_picture',
+        'isSubscribed'
     ];
 
     /**
@@ -71,7 +75,7 @@ class User extends Authenticatable
 
     public function serviceProviders()
     {
-        return $this->hasMany(Provider::class, 'user_id');
+        return $this->hasMany(ServiceProvider::class, 'provider_id');
     }
 
     public function sentMessages()

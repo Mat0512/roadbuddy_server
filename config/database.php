@@ -53,7 +53,7 @@ return [
             'database' => 'roadbuddy',
             // 'username' => 'test',
             'username' => 'roadbuddy_user',
-            'password' => '1234',
+            'password' => '1234@Roadbuddy',
 
             // 'password' => '1234@Roadbuddy', prod
             'unix_socket' => env('DB_SOCKET', ''),

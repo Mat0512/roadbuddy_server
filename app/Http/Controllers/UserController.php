@@ -196,6 +196,8 @@ public function signup(Request $request)
         return response()->json(['message' => 'User updated successfully!', 'user' => $user], 200);
     }
 
+
+
     // Update user password method
     public function updatePassword(Request $request)
     {
@@ -280,4 +282,65 @@ public function signup(Request $request)
 
         return response()->json(['message' => 'User updated successfully!', 'user' => $user], 200);
     }
+
+    public function verifyUser(Request $request)
+    {
+
+        // Validate the request data
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer',
+        ]);
+
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $user = User::find($request->id);
+
+        // Update user details
+        $user->isVerified = true;
+        $user->save();
+
+
+        return response()->json(['message' => 'User updated successfully!', 'user' => $user], 200);
+    }
+
+    public function getUnverifiedUsers ()  {
+
+        $user = User::where('isVerified', false)->orWhereNull('isVerified')->get();
+
+        return response()->json(data: ['users' => $user]);
+
+    }
+
+    public function addAdmin (Request $request ) {
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string',
+            'email' => 'required|string',
+            'phone' => 'required|string',
+
+            'username' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+
+            'password' => Hash::make($request->password),
+            'username' => $request->username,
+            'type' => "admin",   
+        ]);
+
+        return response()->json(data: ['users' => $user]);
+
+    } 
 }

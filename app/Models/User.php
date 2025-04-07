@@ -61,7 +61,9 @@ class User extends Authenticatable
         'type',
         'username',
         'profile_picture',
-        'isSubscribed'
+        'isSubscribed',
+        'isVerified',
+
     ];
 
     /**

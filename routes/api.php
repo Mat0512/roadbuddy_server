@@ -36,11 +36,18 @@ Route::prefix('/auth')->group(function () {
     });
 });
 
+Route::get("/user-unverified", [UserController::class, 'getUnverifiedUsers']);
+Route::post("/user/add-admin", [UserController::class, 'addAdmin']);
 Route::put("/user/subscription", [UserController::class, 'updateSubscription']);
+Route::put("/user/verify", [UserController::class, 'verifyUser']);
 
 
 
-Route::prefix('/provider-services')->group(function () {
+
+
+
+
+Route::prefix('/provider-services')->group(callback: function () {
     // Store new provider service
     Route::get('', [ProviderServiceController::class, 'index']);
 
